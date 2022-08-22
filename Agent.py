@@ -2,6 +2,7 @@ import numpy as np
 import math
 import utils
 from scipy.spatial.transform import Rotation as R
+import ikpy
 
 ############ CONFIG ##############
 home_pos = (-2.595, -4.255, 1.491, -1.485, -0.920, -2.040)
@@ -20,15 +21,25 @@ class Agent:
     def __init__(self, controller):
         self.robot = controller
         self.L_B_D = L_B_D
-        # self.gripper = Robotiq_Two_Finger_Gripper(self.robot, speed=200, force=20)
 
-    def movel(self, tcp, acc=0.2, vel=0.2, wait=True, relative=False):
+    def movel(self, tcp, relative=False):
         if len(tcp) == 3:
+
             if relative:
-                tcp = np.array(self.robot.getl()[:3]) + tcp
-            self.robot.movel(np.concatenate([tcp, self.robot.getl()[3:]]), acc=acc, vel=vel, wait=wait, relative=False)
+                cur_tcp, rot_mat = self.getl()
+                cur_tcp = np.array(cur_tcp)
+                trans_tcp = cur_tcp[:3] + tcp
+                print('tcp', cur_tcp)
+            target_joint = self.robot.ee_chain.inverse_kinematics(target_position=trans_tcp,
+                                                                  target_orientation=rot_mat,
+                                                                  orientation_mode='all')
+            print('before target_joint', target_joint)
+            target_joint = target_joint[1:7]
+            print('after target_joint', target_joint)
+            self.robot.move_group_to_joint_target(group="Arm", target=target_joint, marker=False)
+
         elif len(tcp) == 6:
-            self.robot.movel(tcp, acc=acc, vel=vel, wait=wait, relative=relative)
+            self.robot.move_group_to_joint_target(group="Arm", target=tcp, marker=False)
         else:
             assert False, 'length of tcp input must be 3 or 6'
 
@@ -42,21 +53,27 @@ class Agent:
 
     def getj(self):
         current_joint_values = self.robot.sim.data.qpos[self.robot.actuated_joint_ids]
-        print('getj',self.robot.sim.data.qpos)
+        # print('shoulder_pan_joint', self.robot.sim.data.qpos[0])
+        # print('shoulder_lift_joint', self.robot.sim.data.qpos[1])
+        # print('elbow_joint', self.robot.sim.data.qpos[2])
+        # print('wrist_1_joint', self.robot.sim.data.qpos[3])
+        # print('wrist_2_joint', self.robot.sim.data.qpos[4])
+        # print('wrist_3_joint', self.robot.sim.data.qpos[5])
+        # print('base_to_lik', self.robot.sim.data.qpos[6]) # gripper_motor
         return current_joint_values[:6]
 
     def getl(self) :
-        cur_base_pos = self.robot.sim.data.body_xpos[self.robot.model.body_name2id("ee_link")]
-        # print('base_link', self.robot.sim.data.body_xpos[self.robot.model.body_name2id("base_link")])
-        # print('shoulder_link', self.robot.sim.data.body_xpos[self.robot.model.body_name2id("shoulder_link")])
-        # print('upper_arm_link', self.robot.sim.data.body_xpos[self.robot.model.body_name2id("upper_arm_link")])
-        # print('forearm_link', self.robot.sim.data.body_xpos[self.robot.model.body_name2id("forearm_link")])
-        # print('wrist_1_link', self.robot.sim.data.body_xpos[self.robot.model.body_name2id("wrist_1_link")])
-        # print('wrist_2_link', self.robot.sim.data.body_xpos[self.robot.model.body_name2id("wrist_2_link")])
-        # print('wrist_3_link', self.robot.sim.data.body_xpos[self.robot.model.body_name2id("wrist_3_link")])
-        # print('ee_link', self.robot.sim.data.body_xpos[self.robot.model.body_name2id("ee_link")])
+        cur_joints = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+        cur_joints[1:7] = self.getj()
+        cur_tcp = self.robot.ee_chain.forward_kinematics(cur_joints)
 
-        return cur_base_pos
+        trans_vec, rot_mat = ikpy.utils.geometry.from_transformation_matrix(cur_tcp)
+        # rot_euler = utils.rotation_matrix_to_euler_angles(rot_mat)
+        rot_euler = R.from_matrix(rot_mat).as_rotvec()
+        tcp = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+        tcp[:3] = trans_vec[:3]
+        tcp[3:] = rot_euler
+        return tcp, rot_mat
 
     def close_gripper(self):
         return self.robot.close_gripper()
@@ -111,13 +128,6 @@ class Agent:
         dist_z = -pc[2] + offset[2]
         return dist_x, dist_y, dist_z
 
-    def get_vaccum_pos(self):
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((ROBOT_IP, PORT))
-        s.send(b"socket_send_string('GET POS', 'gripper_socket')")
-        data = s.recv(1024)
-        return int(data)
-
     def calcuate_rpy_to_ur5_rxryrz(self, rpy):
         roll, pitch, yaw = rpy
         yawMatrix = np.matrix([
@@ -166,3 +176,12 @@ class Agent:
         current_pos_D = self.base_to_desk(affine=utils.tcp_to_affine(self.getl()))
         target_pos_D = utils.transform(rot_mat, dcm=current_pos_D)
         self.moveD(utils.affine_to_tcp(dcm=target_pos_D, t=self.base_to_desk(self.getl()[:3])))
+
+        # print('base_link', self.robot.sim.data.body_xpos[self.robot.model.body_name2id("base_link")])
+        # print('shoulder_link', self.robot.sim.data.body_xpos[self.robot.model.body_name2id("shoulder_link")])
+        # print('upper_arm_link', self.robot.sim.data.body_xpos[self.robot.model.body_name2id("upper_arm_link")])
+        # print('forearm_link', self.robot.sim.data.body_xpos[self.robot.model.body_name2id("forearm_link")])
+        # print('wrist_1_link', self.robot.sim.data.body_xpos[self.robot.model.body_name2id("wrist_1_link")])
+        # print('wrist_2_link', self.robot.sim.data.body_xpos[self.robot.model.body_name2id("wrist_2_link")])
+        # print('wrist_3_link', self.robot.sim.data.body_xpos[self.robot.model.body_name2id("wrist_3_link")])
+        # print('ee_link', self.robot.sim.data.body_xpos[self.robot.model.body_name2id("ee_link")])

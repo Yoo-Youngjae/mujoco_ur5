@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.spatial.transform import Rotation as R
-
+import math
 # Converts a 3x3 matrix into corresponding 4x4 affine matrix, with given translation vector
 def to_44(mat_33, t = [0, 0, 0]):
     return np.concatenate(
@@ -53,3 +53,30 @@ def transform(T, position=None, direction=None, scipy_R=None, dcm=None, affine=N
         return np.matmul(T[:3, :3], dcm[:3, :3])
     if affine is not None:
         return np.matmul(T, affine)
+
+# Checks if a matrix is a valid rotation matrix.
+def is_rotation_matrix(mat) :
+    Rt = np.transpose(mat)
+    shouldBeIdentity = np.dot(Rt, mat)
+    I = np.identity(3, dtype = mat.dtype)
+    n = np.linalg.norm(I - shouldBeIdentity)
+    return n < 1e-6
+
+# Calculates rotation matrix to euler angles
+# The result is the same as MATLAB except the order
+# of the euler angles ( x and z are swapped ).
+def rotation_matrix_to_euler_angles(rot_mat):
+    assert(is_rotation_matrix(rot_mat))
+    sy = math.sqrt(rot_mat[0,0] * rot_mat[0,0] +  rot_mat[1,0] * rot_mat[1,0])
+    singular = sy < 1e-6
+
+    if not singular :
+        x = math.atan2(rot_mat[2, 1], rot_mat[2, 2])
+        y = math.atan2(-rot_mat[2, 0], sy)
+        z = math.atan2(rot_mat[1, 0], rot_mat[0, 0])
+    else:
+        x = math.atan2(-rot_mat[1, 2], rot_mat[1, 1])
+        y = math.atan2(-rot_mat[2, 0], sy)
+        z = 0
+
+    return np.array([x, y, z])

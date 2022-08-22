@@ -15,6 +15,7 @@ from pyquaternion import Quaternion
 import cv2 as cv
 import matplotlib.pyplot as plt
 import copy
+import ikpy
 from ikpy.utils import geometry
 # from decorators import debug
 
@@ -880,40 +881,27 @@ class MJ_Controller(object):
 
 
 if __name__ == '__main__':
-
+    from scipy.spatial.transform import Rotation as R
     controller = MJ_Controller()
+    controller.show_model_info()
     joints = [0, 0, 0, 0, 0, 0, 0, 0]
-    # transformation_matrixes = controller.ee_chain.forward_kinematics(joints, full_kinematics=True)
-    # for (index, link) in enumerate(joints):
-    #     (node, orientation) = geometry.from_transformation_matrix(transformation_matrixes[index])
-    #     print(node)
+
+    for i, link in enumerate(controller.ee_chain.links):
+        print(i, link.name)
 
     ax = plt.figure().add_subplot(111, projection='3d')
 
-    # controller.ee_chain.plot([0, 0, 0, 0, 0, 0, 0, 0], ax)
+    # controller.ee_chain.plot([0, -2.595, -4.255, 1.491, -1.485, -0.920, -0.240, 0], ax)
+    # plt.show()
 
-    controller.ee_chain.plot([-2.595, -4.255, 1.491, -1.485, -0.920, -2.040, 0, 0], ax)
+    # controller.ee_chain.plot([0, -2.595, -4.255, 1.491, -1.485, -0.920, -0.140, 0], ax)
+    # plt.show()
+    #
+    controller.ee_chain.plot([0, -2.595, -4.255, 1.491, -1.485, -0.920, -0.040, 0], ax)
     plt.show()
-    if False:
-        ee_position = [0, 0.1, 0]
-        # home_pos = [[ 0.,    -0.3,    1.435],
-        #             [ 0.,        -0.36305089 , 1.37196102],
-        #             [ 0.06969155, -0.28060169,  1.28949624],
-        #             [ 0.1703317,  -0.15245111,  1.69986447],
-        #             [ 0.48220594, -0.38877719,  1.72715009],
-        #             [ 0.52991528, -0.33233424,  1.67069647],
-        #             [ 0.60225758, -0.39336867,  1.67081053],
-        #             [ 0.60225275, -0.3935282,   1.58851068],
-        #             [ 0.60225275, -0.3935282,   1.58851068]]
-        home_pos = (-2.595, -4.255, 1.491, -1.485, -0.920, -2.040, 0, 0)
 
-        ee_position_base = ee_position.copy()
-        print('1. ee_position_base', ee_position_base)
-        gripper_center_position = ee_position_base
 
-        initial_position=[0, *controller.sim.data.qpos[controller.actuated_joint_ids][controller.groups['Arm']], 0]
-        print('initial_position', initial_position)
-        # joint_angles = self.ee_chain.inverse_kinematics(gripper_center_position, [0,0,-1], orientation_mode='X', initial_position=initial_position, regularization_parameter=0.05)
-        joint_angles = controller.ee_chain.inverse_kinematics(gripper_center_position, [1, 0, 0], orientation_mode="X")
-        print('2. joint_angles', joint_angles)
-        joint_angles = controller.ik_yjyoo(ee_position)
+
+
+
+

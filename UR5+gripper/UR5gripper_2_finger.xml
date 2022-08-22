@@ -145,7 +145,7 @@ Control Engineering / Automation Engineering
 
         <!--Robot UR5-->
         <body name="box_link" pos="0 0 0.435">
-            <geom size=".1 .1 1" pos="0 0.1 0" type="box" material="bench_mat"/>
+<!--            <geom size=".1 .1 1" pos="0 0.1 0" type="box" material="bench_mat"/>-->
 <!--            <geom size=".29 .19 .03" pos ="0 0 -0.2" type="box" material="bench_mat"/>-->
 <!--            <geom size=".04 .04 .435" pos =".26 .16 0" type="box" material="bench_mat"/>-->
 <!--            <geom size=".04 .04 .435" pos ="-.26 .16 0" type="box" material="bench_mat"/>-->
