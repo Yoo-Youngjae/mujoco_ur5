@@ -19,22 +19,22 @@ agent.movej(home_pos, relative=False)
 controller.stay(1000)
 print(agent.getl())
 
-agent.movel([0, 0, 0], relative=True)
-controller.stay(1000)
-agent.movel([-0.1, 0, 0], relative=True)
+# agent.movel([0, 0, 0], relative=True)
+# controller.stay(1000)
+agent.movel([-0.2, 0, 0], relative=True)
 
 controller.stay(1000)
-agent.movel([0.1, 0, 0], relative=True)
+agent.movel([0.2, 0, 0], relative=True)
 controller.stay(1000)
 
-agent.movel([0, -0.1, 0], relative=True)
+agent.movel([0, -0.2, 0], relative=True)
 controller.stay(1000)
-agent.movel([0, 0.1, 0], relative=True)
+agent.movel([0, 0.2, 0], relative=True)
 controller.stay(1000)
 
-agent.movel([0, 0, 0.1], relative=True)
+agent.movel([0, 0, 0.2], relative=True)
 controller.stay(1000)
-agent.movel([0, 0, -0.1], relative=True)
+agent.movel([0, 0, -0.2], relative=True)
 controller.stay(1000)
 
 

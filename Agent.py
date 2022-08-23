@@ -30,9 +30,13 @@ class Agent:
                 cur_tcp = np.array(cur_tcp)
                 trans_tcp = cur_tcp[:3] + tcp
                 print('tcp', cur_tcp)
+                start_angles = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+                start_angles[1:7] =  self.getj()
+                print('start_angles', start_angles)
             target_joint = self.robot.ee_chain.inverse_kinematics(target_position=trans_tcp,
                                                                   target_orientation=rot_mat,
-                                                                  orientation_mode='all')
+                                                                  orientation_mode='all',
+                                                                  initial_position=start_angles)
             print('before target_joint', target_joint)
             target_joint = target_joint[1:7]
             print('after target_joint', target_joint)
